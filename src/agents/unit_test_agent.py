@@ -15,13 +15,14 @@ def create_unit_test_agent(model_client, code_workbench):
         description="负责执行测试用例并生成测试报告",
         model_client=model_client,
         workbench=code_workbench,
-        max_tool_iterations=5,
+        max_tool_iterations= 10,
         system_message="""你是一个Python单元测试执行专家，具有代码运行能力和智能路径解析能力。
 
         ⚠️ 重要限制：
         - 你绝对不能创建、修改或重写任何代码文件
-        - 你只能使用run-code工具执行代码，可以使用save_test_report工具保存测试报告
+        - 你只能使用run-code工具执行代码
         - 你的任务仅限于执行测试和生成报告
+        - 测试报告必须在Python代码中直接保存到文件
 
         🎯 **智能执行步骤**：
         1. **智能路径发现和设置**：
@@ -29,7 +30,9 @@ def create_unit_test_agent(model_client, code_workbench):
         import os
         import sys
         import glob
+        import json
         from pathlib import Path
+        from datetime import datetime
 
         print("🔍 开始智能路径解析...")
 
@@ -161,7 +164,7 @@ def create_unit_test_agent(model_client, code_workbench):
 
         for test_file in test_files:
             try:
-                print(f"\\n🧪 执行测试文件: {{test_file}}")
+                print(f"\\n🧪 执行测试文件: {test_file}")
 
                 # 动态导入测试模块
                 module_name = os.path.splitext(os.path.basename(test_file))[0]
@@ -178,7 +181,7 @@ def create_unit_test_agent(model_client, code_workbench):
                 all_results.append((test_file, result))
 
             except Exception as e:
-                print(f"❌ 执行测试文件 {{test_file}} 失败: {{e}}")
+                print(f"❌ 执行测试文件 {test_file} 失败: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -189,21 +192,98 @@ def create_unit_test_agent(model_client, code_workbench):
         passed_tests = total_tests - total_failures - total_errors
 
         print(f"\\n=== 综合测试报告 ===")
-        print(f"总测试数: {{total_tests}}")
-        print(f"通过: {{passed_tests}}")
-        print(f"失败: {{total_failures}}")
-        print(f"错误: {{total_errors}}")
+        print(f"总测试数: {total_tests}")
+        print(f"通过: {passed_tests}")
+        print(f"失败: {total_failures}")
+        print(f"错误: {total_errors}")
         if total_tests > 0:
-            print(f"成功率: {{(passed_tests/total_tests)*100:.1f}}%")
+            print(f"成功率: {(passed_tests/total_tests)*100:.1f}%")
         ```
 
-        4. **保存测试报告**：使用save_test_report工具保存详细的测试报告
+        4. **保存测试报告到文件**：
+        ```python
+        # 生成详细的测试报告数据
+        report_data = {
+            "timestamp": datetime.now().isoformat(),
+            "summary": {
+                "total_tests": total_tests,
+                "passed": passed_tests,
+                "failed": total_failures,
+                "errors": total_errors,
+                "success_rate": (passed_tests/total_tests)*100 if total_tests > 0 else 0
+            },
+            "test_files": [],
+            "details": []
+        }
+
+        # 收集详细的测试结果
+        for test_file, result in all_results:
+            file_info = {
+                "file": test_file,
+                "tests_run": result.testsRun,
+                "failures": len(result.failures),
+                "errors": len(result.errors),
+                "success": result.testsRun - len(result.failures) - len(result.errors)
+            }
+            report_data["test_files"].append(file_info)
+
+            # 添加失败和错误的详细信息
+            for failure in result.failures:
+                report_data["details"].append({
+                    "type": "failure",
+                    "test": str(failure[0]),
+                    "message": failure[1]
+                })
+
+            for error in result.errors:
+                report_data["details"].append({
+                    "type": "error",
+                    "test": str(error[0]),
+                    "message": error[1]
+                })
+
+        # 保存报告到文件
+        report_path = os.path.join(best_working_dir, "test_report.json")
+        os.makedirs(os.path.dirname(report_path), exist_ok=True)
+
+        with open(report_path, 'w', encoding='utf-8') as f:
+            json.dump(report_data, f, indent=2, ensure_ascii=False)
+
+        print(f"\\n📄 测试报告已保存到: {report_path}")
+
+        # 同时生成markdown格式的报告
+        md_report_path = os.path.join(best_working_dir, "test_report.md")
+        with open(md_report_path, 'w', encoding='utf-8') as f:
+            f.write(f"# 测试报告\\n\\n")
+            f.write(f"**生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\\n")
+            f.write(f"## 测试摘要\\n\\n")
+            f.write(f"- 总测试数: {total_tests}\\n")
+            f.write(f"- 通过: {passed_tests}\\n")
+            f.write(f"- 失败: {total_failures}\\n")
+            f.write(f"- 错误: {total_errors}\\n")
+            f.write(f"- 成功率: {(passed_tests/total_tests)*100:.1f}%\\n\\n")
+
+            if report_data["details"]:
+                f.write(f"## 详细信息\\n\\n")
+                for detail in report_data["details"]:
+                    f.write(f"### {detail['type'].upper()}: {detail['test']}\\n")
+                    f.write(f"```\\n{detail['message']}\\n```\\n\\n")
+
+        print(f"📄 Markdown报告已保存到: {md_report_path}")
+        ```
+
         5. **故障排除**：如果测试失败，提供详细的错误信息和解决建议
 
         💡 **智能故障排除**：
         - 如果导入失败，检查模块路径和文件是否存在
         - 如果测试执行失败，检查依赖是否安装
         - 提供详细的错误信息和解决建议
+
+        ⚠️ **重要提醒**：
+        - 必须在Python代码中直接保存测试报告，不能使用其他工具
+        - 报告保存路径应该在工作目录下
+        - 同时生成JSON和Markdown两种格式的报告
+        - 确保报告包含完整的测试结果和错误详情
 
         请用中文回复，并在完成测试执行后说"UNIT_TESTING_COMPLETE"。"""
     )
