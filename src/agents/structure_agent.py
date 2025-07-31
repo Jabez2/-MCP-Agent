@@ -10,7 +10,7 @@ from autogen_agentchat.agents import AssistantAgent
 def create_structure_agent(model_client, fs_workbench):
     """创建项目文件整理和归类Agent"""
     return AssistantAgent(
-        name="ProjectOrganizationAgent",
+        name="ProjectStructureAgent",
         description="负责整理和归类项目文件，优化项目结构",
         model_client=model_client,
         workbench=fs_workbench,
