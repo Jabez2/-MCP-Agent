@@ -1,0 +1,41 @@
+[project]
+name = "code-scanner-mcp"
+version = "0.1.0"
+description = "MCP服务：Python代码静态分析和质量扫描"
+authors = [
+    {name = "MCP Agent", email = "agent@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.2.0",
+    "ast-comments>=1.1.0",
+    "radon>=6.0.1",
+    "flake8>=7.0.0",
+    "pylint>=3.0.0",
+    "bandit>=1.7.5",
+    "mypy>=1.8.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "pydocstyle>=6.3.0",
+    "mccabe>=0.7.0",
+    "vulture>=2.10",
+    "safety>=3.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/code_scanner_mcp"]
+
+[project.scripts]
+code-scanner-mcp = "code_scanner_mcp.server:main"
