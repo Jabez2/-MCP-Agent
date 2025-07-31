@@ -242,8 +242,9 @@ def create_unit_test_agent(model_client, code_workbench):
                     "message": error[1]
                 })
 
-        # 保存报告到文件
-        report_path = os.path.join(best_working_dir, "test_report.json")
+        # 保存报告到文件 - 确保使用正确的目录
+        report_dir = best_working_dir if best_working_dir else '/Users/jabez/output'
+        report_path = os.path.join(report_dir, "test_report.json")
         os.makedirs(os.path.dirname(report_path), exist_ok=True)
 
         with open(report_path, 'w', encoding='utf-8') as f:
@@ -252,7 +253,7 @@ def create_unit_test_agent(model_client, code_workbench):
         print(f"\\n📄 测试报告已保存到: {report_path}")
 
         # 同时生成markdown格式的报告
-        md_report_path = os.path.join(best_working_dir, "test_report.md")
+        md_report_path = os.path.join(report_dir, "test_report.md")
         with open(md_report_path, 'w', encoding='utf-8') as f:
             f.write(f"# 测试报告\\n\\n")
             f.write(f"**生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\\n")
@@ -270,6 +271,12 @@ def create_unit_test_agent(model_client, code_workbench):
                     f.write(f"```\\n{detail['message']}\\n```\\n\\n")
 
         print(f"📄 Markdown报告已保存到: {md_report_path}")
+
+        # 确保报告保存在正确的位置
+        print(f"\\n📍 报告保存位置确认:")
+        print(f"   - 工作目录: {report_dir}")
+        print(f"   - JSON报告: {report_path}")
+        print(f"   - MD报告: {md_report_path}")
         ```
 
         5. **故障排除**：如果测试失败，提供详细的错误信息和解决建议
@@ -285,5 +292,10 @@ def create_unit_test_agent(model_client, code_workbench):
         - 同时生成JSON和Markdown两种格式的报告
         - 确保报告包含完整的测试结果和错误详情
 
-        请用中文回复，并在完成测试执行后说"UNIT_TESTING_COMPLETE"。"""
+        ⚠️ **执行要求**：
+        1. 必须执行完整的测试流程（路径发现 -> 测试执行 -> 报告生成 -> 文件保存）
+        2. 必须在Python代码中保存测试报告到JSON和Markdown文件
+        3. 必须在最后输出"UNIT_TESTING_COMPLETE"标记表示完成
+
+        请用中文回复，严格按照上述步骤执行，并在完成所有步骤后说"UNIT_TESTING_COMPLETE"。"""
     )
