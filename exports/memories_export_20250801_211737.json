@@ -1,0 +1,378 @@
+{
+  "export_time": "2025-08-01T21:17:37.916935",
+  "total_count": 37,
+  "filter_agent": null,
+  "filter_success": null,
+  "memories": [
+    {
+      "index": 1,
+      "id": "3f18ac45-e25c-431a-8229-6e40954e7329",
+      "agent_name": "ProjectStructureAgent",
+      "success": false,
+      "timestamp": "2025-08-01T19:18:34.396972",
+      "duration": 15.7,
+      "task_type": "general",
+      "content_preview": "Agent: ProjectStructureAgent\nTask: 整理项目结构\nSuccess: False\nDuration: 15.70s\nTimestamp: 2025-08-01T19:1..."
+    },
+    {
+      "index": 2,
+      "id": "19a7b0a6-24ef-4cc1-9ca3-1efe70999eb9",
+      "agent_name": "CodeScanningAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:20:01.768172",
+      "duration": 8.9,
+      "task_type": "scanning",
+      "content_preview": "Agent: CodeScanningAgent\nTask: Scan for security vulnerabilities\nSuccess: True\nDuration: 8.90s\nTimes..."
+    },
+    {
+      "index": 3,
+      "id": "274dc841-dda6-4c6a-abb8-1f5246ae51d8",
+      "agent_name": "RefactoringAgent",
+      "success": false,
+      "timestamp": "2025-08-01T19:06:42.528627",
+      "duration": 23.8,
+      "task_type": "general",
+      "content_preview": "Agent: RefactoringAgent\nTask: 修复代码中的错误\nSuccess: False\nDuration: 23.80s\nTimestamp: 2025-08-01T19:06:4..."
+    },
+    {
+      "index": 4,
+      "id": "cda55f0f-585f-441a-8d5b-c7798e08c872",
+      "agent_name": "RefactoringAgent",
+      "success": false,
+      "timestamp": "2025-08-01T19:14:05.202739",
+      "duration": 23.8,
+      "task_type": "general",
+      "content_preview": "Agent: RefactoringAgent\nTask: 修复代码中的错误\nSuccess: False\nDuration: 23.80s\nTimestamp: 2025-08-01T19:14:0..."
+    },
+    {
+      "index": 5,
+      "id": "ed650a18-4faf-488e-a08e-e23c2abd0526",
+      "agent_name": "RefactoringAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:20:01.752865",
+      "duration": 25.7,
+      "task_type": "refactoring",
+      "content_preview": "Agent: RefactoringAgent\nTask: Fix code errors and refactor\nSuccess: True\nDuration: 25.70s\nTimestamp:..."
+    },
+    {
+      "index": 6,
+      "id": "c932553d-33c4-4e2c-b150-baa538346bd9",
+      "agent_name": "RefactoringAgent",
+      "success": false,
+      "timestamp": "2025-08-01T19:18:34.329773",
+      "duration": 23.8,
+      "task_type": "general",
+      "content_preview": "Agent: RefactoringAgent\nTask: 修复代码中的错误\nSuccess: False\nDuration: 23.80s\nTimestamp: 2025-08-01T19:18:3..."
+    },
+    {
+      "index": 7,
+      "id": "9d1bd875-9e22-4191-89f5-110fadfdbaa8",
+      "agent_name": "CodeScanningAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:25:08.846902",
+      "duration": 14.6,
+      "task_type": "general",
+      "content_preview": "Agent: CodeScanningAgent\nTask: 执行代码安全和质量扫描\nSuccess: True\nDuration: 14.60s\nTimestamp: 2025-08-01T19:2..."
+    },
+    {
+      "index": 8,
+      "id": "c2074a6e-ffd1-40df-9286-351894997b9e",
+      "agent_name": "RefactoringAgent",
+      "success": false,
+      "timestamp": "2025-08-01T19:08:35.433497",
+      "duration": 23.8,
+      "task_type": "general",
+      "content_preview": "Agent: RefactoringAgent\nTask: 修复代码中的错误\nSuccess: False\nDuration: 23.80s\nTimestamp: 2025-08-01T19:08:3..."
+    },
+    {
+      "index": 9,
+      "id": "c1bc57e8-c8a1-44f1-ab85-c1298cd4d098",
+      "agent_name": "UnitTestAgent",
+      "success": false,
+      "timestamp": "2025-08-01T19:20:01.741632",
+      "duration": 12.3,
+      "task_type": "testing",
+      "content_preview": "Agent: UnitTestAgent\nTask: Execute unit tests with failures\nSuccess: False\nDuration: 12.30s\nTimestam..."
+    },
+    {
+      "index": 10,
+      "id": "ed0b2b8f-9e40-4977-bce8-56fe2c52067b",
+      "agent_name": "TestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:17:49.287911",
+      "duration": 1.0,
+      "task_type": "general",
+      "content_preview": "Agent: TestAgent\nTask: 测试任务\nSuccess: True\nDuration: 1.00s\nTimestamp: 2025-08-01T19:17:49.287911\nAnal..."
+    },
+    {
+      "index": 11,
+      "id": "5ef182e0-fdc0-4c2a-ab0a-14b68902f494",
+      "agent_name": "TestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:16:21.618828",
+      "duration": 1.0,
+      "task_type": "general",
+      "content_preview": "Agent: TestAgent\nTask: 测试任务\nSuccess: True\nDuration: 1.00s\nTimestamp: 2025-08-01T19:16:21.618828\nAnal..."
+    },
+    {
+      "index": 12,
+      "id": "32f9d953-e97f-468c-b53e-0f309a00f45a",
+      "agent_name": "TestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:17:07.372935",
+      "duration": 1.0,
+      "task_type": "general",
+      "content_preview": "Agent: TestAgent\nTask: 测试任务\nSuccess: True\nDuration: 1.00s\nTimestamp: 2025-08-01T19:17:07.372935\nAnal..."
+    },
+    {
+      "index": 13,
+      "id": "fca259bd-8603-4647-a120-dbfd625e8710",
+      "agent_name": "CodeScanningAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:18:34.386435",
+      "duration": 8.3,
+      "task_type": "general",
+      "content_preview": "Agent: CodeScanningAgent\nTask: 扫描安全漏洞\nSuccess: True\nDuration: 8.30s\nTimestamp: 2025-08-01T19:18:34.3..."
+    },
+    {
+      "index": 14,
+      "id": "063e07ad-5296-4815-acc1-98f4c4359031",
+      "agent_name": "FunctionWritingAgent",
+      "success": true,
+      "timestamp": "2025-08-01T20:58:29.573809",
+      "duration": 5.470198154449463,
+      "task_type": "general",
+      "content_preview": "Agent: FunctionWritingAgent\nTask: \n        【具体执行指令】\n        **Agent 指令：FunctionWritingAgent**\n\n---\n\n..."
+    },
+    {
+      "index": 15,
+      "id": "48e60e6d-eca1-48ec-997c-93e9aae72184",
+      "agent_name": "PlanningAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:25:01.083809",
+      "duration": 8.5,
+      "task_type": "general",
+      "content_preview": "Agent: PlanningAgent\nTask: 分析用户需求：创建一个字符串处理工具库\nSuccess: True\nDuration: 8.50s\nTimestamp: 2025-08-01T1..."
+    },
+    {
+      "index": 16,
+      "id": "78663160-b088-4ea0-ab1f-acc2eecdd813",
+      "agent_name": "ReflectionAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:25:08.862374",
+      "duration": 7.3,
+      "task_type": "general",
+      "content_preview": "Agent: ReflectionAgent\nTask: 总结整个开发过程和经验教训\nSuccess: True\nDuration: 7.30s\nTimestamp: 2025-08-01T19:25..."
+    },
+    {
+      "index": 17,
+      "id": "6f559449-24e6-4b89-8932-8967ca40c2ac",
+      "agent_name": "PlanningAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:24:25.940358",
+      "duration": 8.5,
+      "task_type": "general",
+      "content_preview": "Agent: PlanningAgent\nTask: 分析用户需求：创建一个字符串处理工具库\nSuccess: True\nDuration: 8.50s\nTimestamp: 2025-08-01T1..."
+    },
+    {
+      "index": 18,
+      "id": "80ce053a-4246-4e34-bc9e-ee5e9c756d09",
+      "agent_name": "CodePlanningAgent",
+      "success": true,
+      "timestamp": "2025-08-01T20:58:12.353696",
+      "duration": 8.042877912521362,
+      "task_type": "general",
+      "content_preview": "Agent: CodePlanningAgent\nTask: \n        【具体执行指令】\n        **Agent 执行指令：CodePlanningAgent**\n\n---\n\n### ..."
+    },
+    {
+      "index": 19,
+      "id": "491ff0f1-7d02-4aa4-a240-7e25e004b61d",
+      "agent_name": "CodeGenerationAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:25:08.772572",
+      "duration": 15.3,
+      "task_type": "general",
+      "content_preview": "Agent: CodeGenerationAgent\nTask: 生成字符串处理工具库的Python代码\nSuccess: True\nDuration: 15.30s\nTimestamp: 2025-..."
+    },
+    {
+      "index": 20,
+      "id": "b104a13a-99c2-4279-b1b2-fa29fadaa435",
+      "agent_name": "CodeScanningAgent",
+      "success": true,
+      "timestamp": "2025-08-01T21:00:03.488752",
+      "duration": 27.94404101371765,
+      "task_type": "scanning",
+      "content_preview": "Agent: CodeScanningAgent\nTask: \n        【具体执行指令】\n        **Agent 指令：CodeScanningAgent**\n\n---\n\n### 🧾 ..."
+    },
+    {
+      "index": 21,
+      "id": "7a6df497-a7f7-4561-a95a-23dcb25d760f",
+      "agent_name": "RefactoringAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:25:08.819628",
+      "duration": 18.9,
+      "task_type": "general",
+      "content_preview": "Agent: RefactoringAgent\nTask: 修复测试失败的代码问题\nSuccess: True\nDuration: 18.90s\nTimestamp: 2025-08-01T19:25..."
+    },
+    {
+      "index": 22,
+      "id": "7799d7db-2d4c-4203-bd3a-74223d8a5363",
+      "agent_name": "CodeGenerationAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:24:34.119881",
+      "duration": 15.3,
+      "task_type": "general",
+      "content_preview": "Agent: CodeGenerationAgent\nTask: 生成字符串处理工具库的Python代码\nSuccess: True\nDuration: 15.30s\nTimestamp: 2025-..."
+    },
+    {
+      "index": 23,
+      "id": "7ddd5df7-c529-4a50-b867-1f6cf2e7617c",
+      "agent_name": "CodeGenerationAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:18:34.376065",
+      "duration": 12.5,
+      "task_type": "general",
+      "content_preview": "Agent: CodeGenerationAgent\nTask: 生成Python函数\nSuccess: True\nDuration: 12.50s\nTimestamp: 2025-08-01T19:..."
+    },
+    {
+      "index": 24,
+      "id": "7255ef22-61f9-4890-9007-3ec4c2719023",
+      "agent_name": "TestGenerationAgent",
+      "success": true,
+      "timestamp": "2025-08-01T20:58:46.254115",
+      "duration": 9.288066148757936,
+      "task_type": "testing",
+      "content_preview": "Agent: TestGenerationAgent\nTask: \n        【具体执行指令】\n        **TestGenerationAgent 执行指令**\n\n---\n\n### 🎯 ..."
+    },
+    {
+      "index": 25,
+      "id": "92303949-0580-45a9-a0e7-1762e7c0e57f",
+      "agent_name": "ProjectStructureAgent",
+      "success": true,
+      "timestamp": "2025-08-01T21:00:34.308520",
+      "duration": 22.34527611732483,
+      "task_type": "organization",
+      "content_preview": "Agent: ProjectStructureAgent\nTask: \n        【具体执行指令】\n        **ProjectStructureAgent 执行指令**\n\n---\n\n##..."
+    },
+    {
+      "index": 26,
+      "id": "596f4c0b-ceb6-4d73-b592-55231ddb926c",
+      "agent_name": "DebugTestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T21:01:52.225987",
+      "duration": 1.0,
+      "task_type": "general",
+      "content_preview": "Agent: DebugTestAgent\nTask: 调试Memory记录功能\nSuccess: True\nDuration: 1.00s\nTimestamp: 2025-08-01T21:01:5..."
+    },
+    {
+      "index": 27,
+      "id": "eaca27bb-9437-4a39-b277-5ad256f65363",
+      "agent_name": "UnitTestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:19:53.689312",
+      "duration": 15.5,
+      "task_type": "testing",
+      "content_preview": "Agent: UnitTestAgent\nTask: Execute unit tests for Python code\nSuccess: True\nDuration: 15.50s\nTimesta..."
+    },
+    {
+      "index": 28,
+      "id": "efb2766c-b2d7-48f2-9c4b-ae84276cbde7",
+      "agent_name": "UnitTestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T20:59:23.756203",
+      "duration": 36.650043964385986,
+      "task_type": "testing",
+      "content_preview": "Agent: UnitTestAgent\nTask: \n        【具体执行指令】\n        ```bash\ncd /Users/jabez/output && python -m pyt..."
+    },
+    {
+      "index": 29,
+      "id": "cbb1e4e3-3779-44f1-a1d2-d5e337470e41",
+      "agent_name": "ProjectStructureAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:25:08.793048",
+      "duration": 12.7,
+      "task_type": "general",
+      "content_preview": "Agent: ProjectStructureAgent\nTask: 整理项目文件结构和文档\nSuccess: True\nDuration: 12.70s\nTimestamp: 2025-08-01T..."
+    },
+    {
+      "index": 30,
+      "id": "82d8c13c-40c7-436a-8e1e-68f057cd8feb",
+      "agent_name": "ProjectStructureAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:24:34.135381",
+      "duration": 12.7,
+      "task_type": "general",
+      "content_preview": "Agent: ProjectStructureAgent\nTask: 整理项目文件结构和文档\nSuccess: True\nDuration: 12.70s\nTimestamp: 2025-08-01T..."
+    },
+    {
+      "index": 31,
+      "id": "d2e0785c-8873-43af-9b08-3b22a00c4710",
+      "agent_name": "UnitTestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:25:08.833765",
+      "duration": 19.2,
+      "task_type": "general",
+      "content_preview": "Agent: UnitTestAgent\nTask: 重新执行单元测试验证修复效果\nSuccess: True\nDuration: 19.20s\nTimestamp: 2025-08-01T19:25..."
+    },
+    {
+      "index": 32,
+      "id": "d479d5e5-fa6e-4d72-b174-36f5f90e9bd4",
+      "agent_name": "UnitTestAgent",
+      "success": false,
+      "timestamp": "2025-08-01T19:25:08.806908",
+      "duration": 23.8,
+      "task_type": "general",
+      "content_preview": "Agent: UnitTestAgent\nTask: 执行单元测试并生成测试报告\nSuccess: False\nDuration: 23.80s\nTimestamp: 2025-08-01T19:25..."
+    },
+    {
+      "index": 33,
+      "id": "e36688b0-123f-4939-bba1-d2fe7d8371d5",
+      "agent_name": "UnitTestAgent",
+      "success": false,
+      "timestamp": "2025-08-01T19:24:34.148986",
+      "duration": 23.8,
+      "task_type": "general",
+      "content_preview": "Agent: UnitTestAgent\nTask: 执行单元测试并生成测试报告\nSuccess: False\nDuration: 23.80s\nTimestamp: 2025-08-01T19:24..."
+    },
+    {
+      "index": 34,
+      "id": "cb511938-7e63-4c67-ad66-caaf07f5ee7a",
+      "agent_name": "UnitTestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:13:57.323267",
+      "duration": 45.2,
+      "task_type": "general",
+      "content_preview": "Agent: UnitTestAgent\nTask: 执行单元测试并生成报告\nSuccess: True\nDuration: 45.20s\nTimestamp: 2025-08-01T19:13:57..."
+    },
+    {
+      "index": 35,
+      "id": "ee54938a-d4c8-4a33-b7ee-2549d1070238",
+      "agent_name": "UnitTestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:08:27.590342",
+      "duration": 45.2,
+      "task_type": "general",
+      "content_preview": "Agent: UnitTestAgent\nTask: 执行单元测试并生成报告\nSuccess: True\nDuration: 45.20s\nTimestamp: 2025-08-01T19:08:27..."
+    },
+    {
+      "index": 36,
+      "id": "2cccd910-099a-4d50-8741-9ce44292ec40",
+      "agent_name": "UnitTestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:18:27.056171",
+      "duration": 45.2,
+      "task_type": "general",
+      "content_preview": "Agent: UnitTestAgent\nTask: 执行单元测试并生成报告\nSuccess: True\nDuration: 45.20s\nTimestamp: 2025-08-01T19:18:27..."
+    },
+    {
+      "index": 37,
+      "id": "236155c0-f10c-4fdd-8741-4cb746b3930f",
+      "agent_name": "UnitTestAgent",
+      "success": true,
+      "timestamp": "2025-08-01T19:05:56.401161",
+      "duration": 45.2,
+      "task_type": "general",
+      "content_preview": "Agent: UnitTestAgent\nTask: 执行单元测试并生成报告\nSuccess: True\nDuration: 45.20s\nTimestamp: 2025-08-01T19:05:56..."
+    }
+  ]
+}

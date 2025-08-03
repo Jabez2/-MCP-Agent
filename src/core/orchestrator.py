@@ -17,6 +17,14 @@ from .data_structures import NodeState, TaskLedger, ProgressLedger
 from .orchestrator_helpers import OrchestratorHelpers
 from ..utils.file_naming import parse_task_and_generate_config
 from ..utils.workflow_logger import WorkflowLogger
+from ..memory import (
+    execution_log_manager,
+    agent_state_manager,
+    agent_communication_memory,
+    initialize_memory_system,
+    cleanup_memory_system
+)
+from ..memory.unit_test_memory_manager import unit_test_memory_manager
 
 
 class GraphFlowOrchestrator:
@@ -57,6 +65,9 @@ class GraphFlowOrchestrator:
         # 工作流日志记录器
         self.workflow_logger = WorkflowLogger()
 
+        # Memory系统标志
+        self.memory_initialized = False
+
         # 初始化节点状态
         for node_name in self.participants.keys():
             self.progress_ledger.node_states[node_name] = NodeState.NOT_STARTED
@@ -68,6 +79,69 @@ class GraphFlowOrchestrator:
         """分析并记录每个Agent的能力描述"""
         for name, agent in self.participants.items():
             self.task_ledger.agent_capabilities[name] = agent.description
+
+    async def _initialize_memory_system(self):
+        """初始化Memory系统"""
+        if not self.memory_initialized:
+            success = await initialize_memory_system()
+            if success:
+                # 初始化UnitTest专用Memory
+                await unit_test_memory_manager.initialize()
+
+                self.memory_initialized = True
+
+                # 配置Agent依赖关系
+                await self._configure_agent_dependencies()
+
+                print("🧠 Orchestrator Memory系统初始化完成")
+            else:
+                print("⚠️ Memory系统初始化失败，将继续使用基础功能")
+
+    async def _configure_agent_dependencies(self):
+        """配置Agent依赖关系"""
+        # 定义Agent依赖关系
+        agent_dependencies = {
+            "FunctionWritingAgent": ["CodePlanningAgent"],
+            "TestGenerationAgent": ["FunctionWritingAgent"],
+            "UnitTestAgent": ["TestGenerationAgent"],
+            "RefactoringAgent": ["UnitTestAgent"],
+            "CodeScanningAgent": ["UnitTestAgent", "RefactoringAgent"],
+            "ProjectStructureAgent": ["CodeScanningAgent"],
+            "ReflectionAgent": ["ProjectStructureAgent"]
+        }
+
+        # 只保留当前工作流中存在的Agent依赖
+        filtered_dependencies = {}
+        for agent, deps in agent_dependencies.items():
+            if agent in self.participants:
+                filtered_deps = [dep for dep in deps if dep in self.participants]
+                if filtered_deps:
+                    filtered_dependencies[agent] = filtered_deps
+
+        # 设置到通信Memory中
+        agent_communication_memory.agent_dependencies = filtered_dependencies
+
+        print(f"🔗 配置Agent依赖关系: {len(filtered_dependencies)} 个依赖链")
+
+    async def _cleanup_memory_system(self):
+        """清理Memory系统"""
+        if self.memory_initialized:
+            await cleanup_memory_system()
+            print("🧹 Orchestrator Memory系统清理完成")
+
+    def _get_current_workflow_stage(self) -> str:
+        """获取当前工作流阶段"""
+        completed_nodes = [name for name, state in self.progress_ledger.node_states.items()
+                          if state == NodeState.COMPLETED]
+
+        if not completed_nodes:
+            return "initial"
+        elif len(completed_nodes) < len(self.participants) // 2:
+            return "early"
+        elif len(completed_nodes) < len(self.participants):
+            return "middle"
+        else:
+            return "final"
 
     def _initialize_path_resolver(self):
         """初始化智能路径解析器"""
@@ -95,14 +169,22 @@ class GraphFlowOrchestrator:
         Yields:
             执行过程中的事件和结果
         """
+        # 初始化Memory系统
+        await self._initialize_memory_system()
+
         self.task_ledger.original_task = task
 
-        # 外层循环：任务分解和计划制定
-        await self._outer_loop_planning(task)
+        try:
+            # 外层循环：任务分解和计划制定
+            await self._outer_loop_planning(task)
 
-        # 内层循环：智能执行和监控
-        async for event in self._inner_loop_execution():
-            yield event
+            # 内层循环：智能执行和监控
+            async for event in self._inner_loop_execution():
+                yield event
+
+        finally:
+            # 清理Memory系统
+            await self._cleanup_memory_system()
 
     async def _outer_loop_planning(self, task: str):
         """
@@ -473,6 +555,10 @@ class GraphFlowOrchestrator:
         try:
             agent = self.participants[node_name]
 
+            # 执行前：准备Agent上下文和通信信息
+            if self.memory_initialized:
+                await self._prepare_agent_execution(node_name)
+
             # 构建增强的提示
             enhanced_prompt = await self._build_enhanced_prompt(node_name)
 
@@ -510,6 +596,38 @@ class GraphFlowOrchestrator:
             else:
                 self.progress_ledger.update_node_state(node_name, NodeState.FAILED)
                 self.progress_ledger.stall_count += 1
+
+            # 记录执行结果到Memory系统
+            if self.memory_initialized:
+                try:
+                    # 标准Memory记录
+                    await execution_log_manager.record_execution(
+                        agent_name=node_name,
+                        task_description=enhanced_prompt[:200] + "..." if len(enhanced_prompt) > 200 else enhanced_prompt,
+                        execution_result=result_analysis,
+                        success=result_analysis["success"],
+                        duration=execution_time,
+                        context={
+                            "stall_count": self.progress_ledger.stall_count,
+                            "workflow_stage": self._get_current_workflow_stage()
+                        }
+                    )
+
+                    # UnitTestAgent特殊处理：保存完整测试输出
+                    if node_name == "UnitTestAgent":
+                        await self._record_complete_unit_test_output(
+                            node_name, enhanced_prompt, response, result_analysis, execution_time
+                        )
+
+                    # 执行后：处理Agent通信和消息传递
+                    await self._process_agent_execution_result(node_name, {
+                        "success": result_analysis["success"],
+                        "analysis": result_analysis,
+                        "execution_time": execution_time
+                    })
+
+                except Exception as e:
+                    print(f"⚠️ Memory记录失败: {e}")
 
             return {
                 "success": result_analysis["success"],
@@ -806,3 +924,305 @@ class GraphFlowOrchestrator:
         """
 
         return StopMessage(content=final_message, source="orchestrator")
+
+    # ================================
+    # Agent通信增强方法
+    # ================================
+
+    async def _prepare_agent_execution(self, agent_name: str):
+        """准备Agent执行：收集上下文和相关信息"""
+        try:
+            # 更新Agent上下文为"starting"
+            current_task = self._get_current_task_for_agent(agent_name)
+            dependencies = agent_communication_memory.agent_dependencies.get(agent_name, [])
+
+            await agent_communication_memory.update_agent_context(
+                agent_name=agent_name,
+                current_task=current_task,
+                execution_state="starting",
+                dependencies=dependencies
+            )
+
+            # 收集依赖Agent的输出
+            dependency_outputs = await agent_communication_memory.get_dependency_outputs(agent_name)
+
+            # 获取发送给该Agent的消息
+            incoming_messages = await agent_communication_memory.get_messages_for_agent(agent_name, limit=3)
+
+            # 构建增强的上下文信息并存储到任务账本中
+            enhanced_context = {
+                "dependency_outputs": dependency_outputs,
+                "incoming_messages": [
+                    f"{msg.from_agent} ({msg.message_type}): {msg.content[:100]}..."
+                    for msg in incoming_messages
+                ],
+                "suggestions": await agent_communication_memory.suggest_next_actions(agent_name)
+            }
+
+            # 存储到任务账本中
+            if not hasattr(self.task_ledger, 'enhanced_contexts'):
+                self.task_ledger.enhanced_contexts = {}
+            self.task_ledger.enhanced_contexts[agent_name] = enhanced_context
+
+        except Exception as e:
+            print(f"⚠️ 准备Agent上下文失败: {e}")
+
+    async def _process_agent_execution_result(self, agent_name: str, execution_result: Dict[str, Any]):
+        """处理执行结果：发送消息和更新上下文"""
+        try:
+            success = execution_result.get("success", False)
+            analysis = execution_result.get("analysis", {})
+            message_content = analysis.get("message_content", "")
+
+            # 更新Agent上下文
+            execution_state = "completed" if success else "failed"
+            outputs = {
+                "success": success,
+                "message_content": message_content,
+                "execution_time": execution_result.get("execution_time", 0),
+                "analysis": analysis
+            }
+
+            await agent_communication_memory.update_agent_context(
+                agent_name=agent_name,
+                current_task=self._get_current_task_for_agent(agent_name),
+                execution_state=execution_state,
+                outputs=outputs
+            )
+
+            # 根据执行结果发送相应的消息
+            await self._send_result_messages(agent_name, execution_result)
+
+            # 特殊处理：错误传递和智能修复
+            if not success:
+                await self._handle_execution_failure(agent_name, execution_result)
+            else:
+                await self._handle_execution_success(agent_name, execution_result)
+
+        except Exception as e:
+            print(f"⚠️ 处理Agent执行结果失败: {e}")
+
+    async def _send_result_messages(self, agent_name: str, execution_result: Dict[str, Any]):
+        """根据执行结果发送消息给相关Agent"""
+        try:
+            success = execution_result.get("success", False)
+            analysis = execution_result.get("analysis", {})
+
+            # 找到依赖当前Agent的其他Agent
+            dependent_agents = [
+                agent for agent, deps in agent_communication_memory.agent_dependencies.items()
+                if agent_name in deps and agent in self.participants
+            ]
+
+            for dependent_agent in dependent_agents:
+                if success:
+                    # 发送成功结果
+                    await agent_communication_memory.send_message(
+                        from_agent=agent_name,
+                        to_agent=dependent_agent,
+                        message_type="result",
+                        content=f"{agent_name} 执行成功。输出: {analysis.get('message_content', '')[:200]}",
+                        metadata={
+                            "execution_time": execution_result.get("execution_time", 0),
+                            "success": True
+                        }
+                    )
+                else:
+                    # 发送错误信息
+                    failure_reasons = analysis.get("failure_reasons", [])
+                    await agent_communication_memory.send_message(
+                        from_agent=agent_name,
+                        to_agent=dependent_agent,
+                        message_type="error",
+                        content=f"{agent_name} 执行失败。错误: {'; '.join(failure_reasons)}",
+                        metadata={
+                            "failure_reasons": failure_reasons,
+                            "success": False
+                        }
+                    )
+        except Exception as e:
+            print(f"⚠️ 发送结果消息失败: {e}")
+
+    def _get_current_task_for_agent(self, agent_name: str) -> str:
+        """获取Agent的当前任务描述"""
+        task_mapping = {
+            "CodePlanningAgent": "制定代码实现计划",
+            "FunctionWritingAgent": "编写函数代码",
+            "TestGenerationAgent": "生成测试用例",
+            "UnitTestAgent": "执行单元测试",
+            "RefactoringAgent": "修复代码问题",
+            "CodeScanningAgent": "执行代码扫描",
+            "ProjectStructureAgent": "整理项目结构",
+            "ReflectionAgent": "总结开发过程"
+        }
+        return task_mapping.get(agent_name, "执行专业任务")
+
+    async def _handle_execution_failure(self, agent_name: str, execution_result: Dict[str, Any]):
+        """处理执行失败的情况"""
+        try:
+            analysis = execution_result.get("analysis", {})
+            failure_reasons = analysis.get("failure_reasons", [])
+            message_content = analysis.get("message_content", "")
+
+            # 特殊处理：UnitTestAgent失败 → RefactoringAgent
+            if agent_name == "UnitTestAgent" and "RefactoringAgent" in self.participants:
+                # 获取完整的测试信息
+                detailed_test_info = await unit_test_memory_manager.get_detailed_test_info_for_refactoring("UnitTestAgent")
+
+                # 发送详细的错误信息
+                await agent_communication_memory.send_message(
+                    from_agent="UnitTestAgent",
+                    to_agent="RefactoringAgent",
+                    message_type="error",
+                    content=f"单元测试失败，需要修复。错误详情: {message_content}",
+                    metadata={
+                        "failure_reasons": failure_reasons,
+                        "test_output": message_content,
+                        "priority": "high",
+                        "detailed_test_info": detailed_test_info
+                    }
+                )
+
+                # 发送完整的测试上下文信息
+                if detailed_test_info:
+                    context_content = f"""
+测试环境和代码上下文信息: {self._get_test_context()}
+
+=== 完整测试输出 ===
+{detailed_test_info.get('complete_raw_output', '')[:1000]}...
+
+=== 解析的失败信息 ===
+{detailed_test_info.get('parsed_failures', [])}
+
+=== 智能修复建议 ===
+{chr(10).join(detailed_test_info.get('detailed_recommendations', []))}
+
+=== 错误模式分析 ===
+{detailed_test_info.get('error_patterns', [])}
+                    """.strip()
+                else:
+                    context_content = f"测试环境和代码上下文信息: {self._get_test_context()}"
+
+                await agent_communication_memory.send_message(
+                    from_agent="UnitTestAgent",
+                    to_agent="RefactoringAgent",
+                    message_type="context",
+                    content=context_content,
+                    metadata={
+                        "context_type": "detailed_test_environment",
+                        "has_detailed_info": bool(detailed_test_info)
+                    }
+                )
+        except Exception as e:
+            print(f"⚠️ 处理执行失败失败: {e}")
+
+    async def _handle_execution_success(self, agent_name: str, execution_result: Dict[str, Any]):
+        """处理执行成功的情况"""
+        try:
+            analysis = execution_result.get("analysis", {})
+            message_content = analysis.get("message_content", "")
+
+            # 特殊处理：RefactoringAgent成功 → UnitTestAgent
+            if agent_name == "RefactoringAgent" and "UnitTestAgent" in self.participants:
+                await agent_communication_memory.send_message(
+                    from_agent="RefactoringAgent",
+                    to_agent="UnitTestAgent",
+                    message_type="context",
+                    content=f"代码修复完成。修复内容: {message_content}",
+                    metadata={
+                        "context_type": "code_fix",
+                        "priority": "high"
+                    }
+                )
+
+            # CodeScanningAgent成功 → ProjectStructureAgent
+            elif agent_name == "CodeScanningAgent" and "ProjectStructureAgent" in self.participants:
+                await agent_communication_memory.send_message(
+                    from_agent="CodeScanningAgent",
+                    to_agent="ProjectStructureAgent",
+                    message_type="result",
+                    content=f"代码扫描完成。扫描结果: {message_content}",
+                    metadata={
+                        "scan_results": analysis,
+                        "context_type": "scan_report"
+                    }
+                )
+        except Exception as e:
+            print(f"⚠️ 处理执行成功失败: {e}")
+
+    def _get_test_context(self) -> str:
+        """获取测试上下文信息"""
+        test_file_path = getattr(self.task_ledger, 'test_file_path', 'unknown')
+        main_file_path = getattr(self.task_ledger, 'main_file_path', 'unknown')
+        return f"测试文件: {test_file_path}, 主文件: {main_file_path}"
+
+    async def _record_complete_unit_test_output(self,
+                                              agent_name: str,
+                                              task_description: str,
+                                              raw_response: str,
+                                              result_analysis: Dict[str, Any],
+                                              execution_time: float):
+        """记录UnitTestAgent的完整输出"""
+        try:
+            # 提取测试文件信息
+            test_files = self._extract_test_files_from_response(raw_response)
+
+            # 提取测试报告信息
+            test_reports = self._extract_test_reports_from_response(raw_response)
+
+            # 记录到UnitTest专用Memory
+            await unit_test_memory_manager.record_complete_test_execution(
+                agent_name=agent_name,
+                task_description=task_description,
+                raw_output=raw_response,
+                execution_result=result_analysis,
+                success=result_analysis["success"],
+                duration=execution_time,
+                test_files=test_files,
+                test_reports=test_reports
+            )
+
+            print(f"🧪 UnitTestAgent完整输出已保存到专用Memory")
+
+        except Exception as e:
+            print(f"⚠️ 记录UnitTestAgent完整输出失败: {e}")
+
+    def _extract_test_files_from_response(self, response: str) -> List[str]:
+        """从响应中提取测试文件路径"""
+        test_files = []
+        lines = response.split('\n')
+
+        for line in lines:
+            # 查找测试文件路径
+            if "test_" in line and ".py" in line:
+                # 提取文件路径
+                import re
+                path_match = re.search(r'[/\\]?[\w/\\]+test_[\w_]+\.py', line)
+                if path_match:
+                    test_files.append(path_match.group(0))
+
+        return list(set(test_files))  # 去重
+
+    def _extract_test_reports_from_response(self, response: str) -> Dict[str, Any]:
+        """从响应中提取测试报告信息"""
+        reports = {}
+
+        # 查找JSON格式的测试报告
+        import re
+        json_pattern = r'\{[^{}]*"test_files"[^{}]*\}'
+        json_matches = re.findall(json_pattern, response, re.DOTALL)
+
+        for i, json_str in enumerate(json_matches):
+            try:
+                import json
+                report_data = json.loads(json_str)
+                reports[f"report_{i+1}"] = report_data
+            except:
+                continue
+
+        # 查找Markdown格式的报告路径
+        md_pattern = r'test_report\.md'
+        if re.search(md_pattern, response):
+            reports["markdown_report"] = "test_report.md"
+
+        return reports

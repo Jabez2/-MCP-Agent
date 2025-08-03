@@ -47,6 +47,34 @@ class OrchestratorHelpers:
         {OrchestratorHelpers.format_current_state(orchestrator)}
         """
 
+        # 添加Agent通信增强信息
+        if orchestrator.memory_initialized and hasattr(orchestrator.task_ledger, 'enhanced_contexts'):
+            enhanced_context = orchestrator.task_ledger.enhanced_contexts.get(node_name, {})
+
+            if enhanced_context:
+                enhanced_prompt += "\n\n        【🔗 Agent协作信息】"
+
+                # 依赖Agent输出
+                if enhanced_context.get("dependency_outputs"):
+                    enhanced_prompt += f"""
+
+        【📋 依赖Agent输出】
+        {OrchestratorHelpers._format_dependency_outputs(enhanced_context["dependency_outputs"])}"""
+
+                # 收到的消息
+                if enhanced_context.get("incoming_messages"):
+                    enhanced_prompt += f"""
+
+        【📨 收到的消息】
+        {chr(10).join([f"        - {msg}" for msg in enhanced_context["incoming_messages"]])}"""
+
+                # 智能建议
+                if enhanced_context.get("suggestions"):
+                    enhanced_prompt += f"""
+
+        【💡 建议的行动】
+        {chr(10).join([f"        - {suggestion}" for suggestion in enhanced_context["suggestions"]])}"""
+
         # 特殊处理：为重构Agent添加错误信息
         if node_name == "RefactoringAgent" and hasattr(orchestrator.task_ledger, 'error_history') and orchestrator.task_ledger.error_history:
             latest_error = orchestrator.task_ledger.error_history[-1]
@@ -264,3 +292,22 @@ class OrchestratorHelpers:
                 history_lines.append(f"  失败原因: {', '.join(failure_reasons)}")
 
         return "\n".join(history_lines)
+
+    @staticmethod
+    def _format_dependency_outputs(dependency_outputs: dict) -> str:
+        """格式化依赖Agent输出信息"""
+        if not dependency_outputs:
+            return "        无依赖输出"
+
+        formatted_lines = []
+        for agent_name, outputs in dependency_outputs.items():
+            formatted_lines.append(f"        {agent_name}:")
+            if isinstance(outputs, dict):
+                for key, value in outputs.items():
+                    if isinstance(value, str) and len(value) > 100:
+                        value = value[:100] + "..."
+                    formatted_lines.append(f"          {key}: {value}")
+            else:
+                formatted_lines.append(f"          {str(outputs)[:100]}...")
+
+        return "\n".join(formatted_lines)

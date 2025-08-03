@@ -25,6 +25,8 @@ def create_model_client():
         top_p=0.8,
         extra_body={"top_k": 20, "repetition_penalty": 1.05}
     )
+
+
 # def create_model_client():
 #     """创建LLM模型客户端
     

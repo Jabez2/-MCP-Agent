@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-08-01T19:25:08.862224",
+  "agent_name": "CodeScanningAgent",
+  "state": {
+    "last_task": "执行代码安全和质量扫描",
+    "last_execution_time": "2025-08-01T19:25:08.862204",
+    "success": true,
+    "duration": 14.6
+  }
+}
