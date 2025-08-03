@@ -599,7 +599,37 @@ class GraphFlowOrchestrator:
 
             # 调整成功判断逻辑 - 如果有完成标记，内容长度要求可以放宽
             if has_completion_marker:
-                success = True  # 有完成标记就认为成功
+                # 特殊处理：单元测试Agent需要检查测试是否真正通过
+                if node_name == "UnitTestAgent":
+                    # 检查测试报告文件是否存在失败
+                    try:
+                        import json
+                        import os
+                        report_path = "/Users/jabez/output/test_report.json"
+                        if os.path.exists(report_path):
+                            with open(report_path, 'r', encoding='utf-8') as f:
+                                report_data = json.load(f)
+
+                            failures = report_data.get("summary", {}).get("failures", 0)
+                            errors = report_data.get("summary", {}).get("errors", 0)
+
+                            if failures > 0 or errors > 0:
+                                success = False
+                                failure_reasons.append(f"测试报告显示有 {failures} 个失败和 {errors} 个错误")
+                            else:
+                                success = True
+                        else:
+                            # 如果没有报告文件，检查输出内容中的测试结果
+                            if any(keyword in combined_content.lower() for keyword in ["failed", "error", "assertion"]):
+                                success = False
+                                failure_reasons.append("输出内容中检测到测试失败信息")
+                            else:
+                                success = True
+                    except Exception as e:
+                        # 如果检查报告失败，回退到原逻辑
+                        success = True
+                else:
+                    success = True  # 其他Agent有完成标记就认为成功
             else:
                 success = len(combined_content) > 50  # 没有完成标记需要足够的内容
 

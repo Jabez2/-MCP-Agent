@@ -14,7 +14,7 @@ def create_coding_agent(model_client, fs_workbench):
         description="负责根据规划编写具体的Python函数代码并保存到文件",
         model_client=model_client,
         workbench=fs_workbench,
-        max_tool_iterations=10,
+        max_tool_iterations=20,
         system_message="""你是一个Python代码编写专家，具有文件操作能力。
         你的任务是：
         1. 根据规划Agent的指导编写Python函数
