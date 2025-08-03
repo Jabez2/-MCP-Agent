@@ -54,9 +54,9 @@ docs = [
 mcp-multichain-agent = "src.main:main"
 
 [project.urls]
-Homepage = "https://github.com/mcpmultichain/mcp-multichain-agent"
-Repository = "https://github.com/mcpmultichain/mcp-multichain-agent.git"
-Issues = "https://github.com/mcpmultichain/mcp-multichain-agent/issues"
+Homepage = "https://github.com/Jabez2/-MCP-Agent"
+Repository = "https://github.com/Jabez2/-MCP-Agent.git"
+Issues = "https://github.com/Jabez2/-MCP-Agent/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

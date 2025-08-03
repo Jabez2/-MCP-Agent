@@ -18,7 +18,7 @@ setup(
     description="基于MCP的多链代码生成Agent开发项目",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/mcpmultichain/mcp-multichain-agent",
+    url="https://github.com/Jabez2/-MCP-Agent",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
