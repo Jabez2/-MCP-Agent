@@ -38,7 +38,7 @@ class GraphFlowOrchestrator:
     4. 执行结果分析和错误处理
     """
 
-    def __init__(self, graph, participants: List[ChatAgent], model_client, max_stalls: int = 3, max_retries: int = 2):
+    def __init__(self, graph, participants: List[ChatAgent], model_client, max_stalls: int = 3, max_retries: int = 2, chain_name: str = "standard"):
         """
         初始化编排器
 
@@ -48,12 +48,14 @@ class GraphFlowOrchestrator:
             model_client: LLM模型客户端
             max_stalls: 最大停滞次数
             max_retries: 最大重试次数
+            chain_name: 链路名称，用于配置特定的依赖关系
         """
         self.graph = graph
         self.participants = {agent.name: agent for agent in participants}
         self.model_client = model_client
         self.max_stalls = max_stalls
         self.max_retries = max_retries
+        self.chain_name = chain_name  # 添加链路名称
 
         # MagenticOne 风格的状态管理
         self.task_ledger = TaskLedger()
@@ -98,17 +100,25 @@ class GraphFlowOrchestrator:
                 print("⚠️ Memory系统初始化失败，将继续使用基础功能")
 
     async def _configure_agent_dependencies(self):
-        """配置Agent依赖关系"""
-        # 定义Agent依赖关系
-        agent_dependencies = {
-            "FunctionWritingAgent": ["CodePlanningAgent"],
-            "TestGenerationAgent": ["FunctionWritingAgent"],
-            "UnitTestAgent": ["TestGenerationAgent"],
-            "RefactoringAgent": ["UnitTestAgent"],
-            "CodeScanningAgent": ["UnitTestAgent", "RefactoringAgent"],
-            "ProjectStructureAgent": ["CodeScanningAgent"],
-            "ReflectionAgent": ["ProjectStructureAgent"]
-        }
+        """配置Agent依赖关系 - 支持不同链路配置"""
+        try:
+            # 尝试从链路配置获取依赖关系
+            from ..config.chain_config import get_chain_config
+            chain_config = get_chain_config(self.chain_name)
+            agent_dependencies = chain_config.dependencies
+            print(f"🔗 使用 {self.chain_name} 链路的依赖配置")
+        except Exception as e:
+            print(f"⚠️ 无法获取链路配置，使用默认依赖关系: {e}")
+            # 回退到默认的标准链路依赖关系
+            agent_dependencies = {
+                "FunctionWritingAgent": ["CodePlanningAgent"],
+                "TestGenerationAgent": ["FunctionWritingAgent"],
+                "UnitTestAgent": ["TestGenerationAgent"],
+                "RefactoringAgent": ["UnitTestAgent"],
+                "CodeScanningAgent": ["UnitTestAgent", "RefactoringAgent"],
+                "ProjectStructureAgent": ["CodeScanningAgent"],
+                "ReflectionAgent": ["ProjectStructureAgent"]
+            }
 
         # 只保留当前工作流中存在的Agent依赖
         filtered_dependencies = {}
@@ -122,6 +132,8 @@ class GraphFlowOrchestrator:
         agent_communication_memory.agent_dependencies = filtered_dependencies
 
         print(f"🔗 配置Agent依赖关系: {len(filtered_dependencies)} 个依赖链")
+        for agent, deps in filtered_dependencies.items():
+            print(f"   {agent} 依赖: {', '.join(deps)}")
 
     async def _cleanup_memory_system(self):
         """清理Memory系统"""
@@ -835,10 +847,16 @@ class GraphFlowOrchestrator:
             self.progress_ledger.node_states["UnitTestAgent"] = NodeState.NOT_STARTED
             return ["UnitTestAgent"]
 
-        # 特殊处理：单元测试成功后，跳过反思Agent，直接进行代码扫描
+        # 特殊处理：单元测试成功后，根据链路配置决定下一步
         elif current_node == "UnitTestAgent" and execution_result["success"]:
             print(f"✅ 单元测试通过，继续后续流程")
-            return ["CodeScanningAgent"]  # 跳过ReflectionAgent
+
+            # 根据当前链路配置决定下一步
+            if "CodeScanningAgent" in self.participants:
+                return ["CodeScanningAgent"]  # 标准链路：继续代码扫描
+            else:
+                print(f"🎉 {self.chain_name} 链路执行完成，UnitTestAgent 是最后一个节点")
+                return []  # 最小链路：结束流程
 
         # 一般失败处理：智能重试和替代
         if not execution_result["success"]:
@@ -855,20 +873,36 @@ class GraphFlowOrchestrator:
                     print(f"🔄 找到替代节点: {alternative_nodes}")
                     return alternative_nodes
 
-        # 正常流程：按预定义顺序执行
-        normal_flow_sequence = [
-            "CodePlanningAgent", "FunctionWritingAgent", "TestGenerationAgent",
-            "UnitTestAgent", "CodeScanningAgent", "ProjectStructureAgent"
-        ]
+        # 正常流程：根据当前链路配置的Agent顺序执行
+        try:
+            # 获取当前链路配置的Agent顺序
+            from ..config.chain_config import get_chain_config
+            chain_config = get_chain_config(self.chain_name)
+            current_flow_sequence = chain_config.agents
+            print(f"🔗 使用 {self.chain_name} 链路顺序: {' → '.join(current_flow_sequence)}")
+        except Exception as e:
+            print(f"⚠️ 无法获取链路配置，使用默认顺序: {e}")
+            # 回退到默认的标准链路顺序
+            current_flow_sequence = [
+                "CodePlanningAgent", "FunctionWritingAgent", "TestGenerationAgent",
+                "UnitTestAgent", "CodeScanningAgent", "ProjectStructureAgent"
+            ]
 
         try:
-            current_index = normal_flow_sequence.index(current_node)
-            if current_index + 1 < len(normal_flow_sequence):
-                next_node = normal_flow_sequence[current_index + 1]
-                print(f"➡️ 正常流程：{current_node} -> {next_node}")
-                return [next_node]
+            current_index = current_flow_sequence.index(current_node)
+            if current_index + 1 < len(current_flow_sequence):
+                next_node = current_flow_sequence[current_index + 1]
+                # 确保下一个节点在当前参与者中
+                if next_node in self.participants:
+                    print(f"➡️ 正常流程：{current_node} -> {next_node}")
+                    return [next_node]
+                else:
+                    print(f"⚠️ 下一个节点 {next_node} 不在当前参与者中，流程结束")
+            else:
+                print(f"🎉 {self.chain_name} 链路执行完成，{current_node} 是最后一个节点")
         except ValueError:
-            # 如果当前节点不在正常流程中，返回空列表结束
+            # 如果当前节点不在流程中，返回空列表结束
+            print(f"⚠️ 当前节点 {current_node} 不在 {self.chain_name} 链路中，流程结束")
             pass
 
         return []  # 结束流程
