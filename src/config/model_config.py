@@ -18,7 +18,7 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 #     )
 #     return OpenAIChatCompletionClient(
 #         model="Qwen/Qwen3-Coder-480B-A35B-Instruct",
-#         api_key="ms-d00638ea-e181-40b9-9fba-8047d018acf0",
+#         api_key="",
 #         base_url="https://api-inference.modelscope.cn/v1/",
 #         model_info=model_info,
 #         temperature=0.7,
@@ -36,7 +36,7 @@ def create_model_client():
     )
     return OpenAIChatCompletionClient(
         model="qwen3-coder-plus-2025-07-22",
-        api_key="sk-5a5419a94d8d4cbda5c302b80a69a47d",
+        api_key="",
         base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         model_info=model_info,
         temperature=0.7,
@@ -65,7 +65,7 @@ def create_model_client():
     
 #     return OpenAIChatCompletionClient(
 #         model="ZhipuAI/GLM-4.5",
-#         api_key="ms-d00638ea-e181-40b9-9fba-8047d018acf0",
+#         api_key="",
 #         base_url="https://api-inference.modelscope.cn/v1",
 #         model_info=model_info,
 #         temperature=0.7,
