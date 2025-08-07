@@ -2,6 +2,7 @@
 基础Memory管理器
 
 提供Agent执行日志存储和检索功能
+修复了AutoGen ChromaDBVectorMemory查询bug，直接使用ChromaDB查询
 """
 
 import json
@@ -51,15 +52,15 @@ class ExecutionLogManager:
             f"Timestamp: {timestamp}"
         ]
         
-        if not success and "failure_reasons" in execution_result:
-            content_parts.append(f"Errors: {execution_result['failure_reasons']}")
+        if execution_result:
+            content_parts.append(f"Result: {json.dumps(execution_result, ensure_ascii=False)}")
         
-        if success and "analysis" in execution_result:
-            content_parts.append(f"Analysis: {execution_result['analysis']}")
+        if context:
+            content_parts.append(f"Context: {json.dumps(context, ensure_ascii=False)}")
         
         content = "\n".join(content_parts)
         
-        # 构建metadata - 确保所有值都是ChromaDB支持的类型
+        # 构建metadata
         metadata = {
             "agent_name": agent_name,
             "success": success,
@@ -69,16 +70,12 @@ class ExecutionLogManager:
         }
 
         if context:
-            # 处理context中的复杂数据类型
             for key, value in context.items():
                 if isinstance(value, (list, dict)):
-                    # 将列表和字典转换为字符串
                     metadata[key] = str(value)
                 elif isinstance(value, (str, int, float, bool)) or value is None:
-                    # 直接支持的类型
                     metadata[key] = value
                 else:
-                    # 其他类型转换为字符串
                     metadata[key] = str(value)
         
         # 存储到向量数据库
@@ -95,14 +92,14 @@ class ExecutionLogManager:
     async def get_similar_executions(self,
                                    query: str,
                                    agent_name: Optional[str] = None,
-                                   success_only: bool = False) -> List[MemoryContent]:
+                                   success_only: bool = False,
+                                   top_k: int = 10) -> List[Dict[str, Any]]:
         """获取相似的执行记录"""
         if not self._initialized:
             await self.initialize()
 
-        # 构建查询字符串 - 优化中英文混合查询
+        # 构建查询字符串
         if agent_name:
-            # 如果指定了agent，使用精确的Agent前缀
             search_query = f"Agent: {agent_name}"
             if query.strip():
                 search_query += f" {query}"
@@ -110,70 +107,51 @@ class ExecutionLogManager:
             search_query = query
 
         try:
-            query_result = await self.execution_memory.query(search_query)
-
-            # 处理不同的返回格式
+            # 直接使用ChromaDB查询，绕过AutoGen的bug
+            collection = self.execution_memory._collection
+            
+            # 执行查询
+            query_results = collection.query(
+                query_texts=[search_query],
+                n_results=top_k
+            )
+            
+            # 格式化结果
             results = []
-            if hasattr(query_result, 'results'):
-                # MemoryQueryResult对象
-                results = query_result.results
-            elif hasattr(query_result, 'memories'):
-                # 如果返回的是MemoryQueryResult对象的另一种格式
-                results = query_result.memories
-            elif isinstance(query_result, list):
-                # 如果直接返回列表
-                results = query_result
-            else:
-                # 其他格式，尝试转换
-                results = list(query_result) if query_result else []
-
+            docs = query_results['documents'][0]
+            distances = query_results['distances'][0]
+            metadatas = query_results['metadatas'][0]
+            ids = query_results['ids'][0]
+            
+            for doc, dist, meta, doc_id in zip(docs, distances, metadatas, ids):
+                # 过滤条件
+                if success_only and not meta.get('success', False):
+                    continue
+                
+                if agent_name and meta.get('agent_name') != agent_name:
+                    continue
+                
+                # 创建MemoryContent格式的结果
+                result = MemoryContent(
+                    content=doc,
+                    mime_type=MemoryMimeType.TEXT,
+                    metadata={
+                        **meta,
+                        'id': doc_id,
+                        'distance': dist,
+                        'similarity': max(0, 1 - dist/100)  # 转换为0-1的相似度分数
+                    }
+                )
+                results.append(result)
+            
             print(f"🔍 查询结果: 找到 {len(results)} 条记录")
-
-            # 确保results中的每个元素都是MemoryContent对象
-            filtered_results = []
-            for i, r in enumerate(results):
-                print(f"   结果 {i+1}: 类型={type(r)}")
-
-                if hasattr(r, 'metadata') and hasattr(r, 'content'):
-                    # 这是一个有效的MemoryContent对象
-                    if success_only and not r.metadata.get("success", False):
-                        continue
-                    filtered_results.append(r)
-                elif isinstance(r, tuple) and len(r) >= 2:
-                    # 可能是(content, metadata)的元组格式
-                    try:
-                        content, metadata = r[0], r[1] if len(r) > 1 else {}
-                        if success_only and not metadata.get("success", False):
-                            continue
-                        # 创建MemoryContent对象
-                        memory_content = MemoryContent(
-                            content=str(content),
-                            mime_type=MemoryMimeType.TEXT,
-                            metadata=metadata
-                        )
-                        filtered_results.append(memory_content)
-                    except Exception as e:
-                        print(f"⚠️ 处理元组结果失败: {e}")
-                else:
-                    print(f"⚠️ 跳过无效的查询结果: {type(r)} - {r}")
-
-            return filtered_results
-
+            return results
+            
         except Exception as e:
-            print(f"⚠️ 查询执行记录时出错: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"❌ 查询执行记录失败: {e}")
             return []
     
-    async def get_agent_success_patterns(self, agent_name: str) -> List[MemoryContent]:
-        """获取特定Agent的成功模式"""
-        return await self.get_similar_executions(
-            query=f"successful execution patterns",
-            agent_name=agent_name,
-            success_only=True
-        )
-    
-    async def get_error_solutions(self, error_description: str) -> List[MemoryContent]:
+    async def get_error_solutions(self, error_description: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """获取错误解决方案"""
         # 尝试多种查询策略
         queries = [
@@ -185,7 +163,11 @@ class ExecutionLogManager:
 
         all_results = []
         for query in queries:
-            results = await self.get_similar_executions(query=query, success_only=True)
+            results = await self.get_similar_executions(
+                query=query, 
+                success_only=True,
+                top_k=top_k
+            )
             all_results.extend(results)
 
         # 去重并返回
@@ -197,25 +179,25 @@ class ExecutionLogManager:
                 seen_ids.add(result_id)
                 unique_results.append(result)
 
-        return unique_results[:5]  # 返回最多5个结果
+        return unique_results[:top_k]
     
     def _classify_task(self, task_description: str) -> str:
         """分类任务类型"""
         task_lower = task_description.lower()
-        
-        if "test" in task_lower:
-            return "testing"
-        elif "refactor" in task_lower or "fix" in task_lower:
-            return "refactoring"
-        elif "structure" in task_lower or "organize" in task_lower:
-            return "organization"
-        elif "scan" in task_lower or "security" in task_lower:
-            return "scanning"
-        elif "reflect" in task_lower or "review" in task_lower:
-            return "reflection"
+
+        if any(keyword in task_lower for keyword in ['代码', 'code', '编程', 'programming']):
+            return "代码生成"
+        elif any(keyword in task_lower for keyword in ['测试', 'test', '单元测试']):
+            return "测试"
+        elif any(keyword in task_lower for keyword in ['重构', 'refactor', '优化']):
+            return "重构"
+        elif any(keyword in task_lower for keyword in ['扫描', 'scan', '检查']):
+            return "代码扫描"
+        elif any(keyword in task_lower for keyword in ['规划', 'plan', '设计']):
+            return "规划设计"
         else:
-            return "general"
-    
+            return "其他"
+
     async def close(self):
         """关闭memory连接"""
         if self.execution_memory:
@@ -224,44 +206,44 @@ class ExecutionLogManager:
 
 class AgentStateManager:
     """Agent状态管理器"""
-    
+
     def __init__(self):
         self.states_path = memory_config.agent_states_path
-    
+
     async def save_agent_state(self, agent_name: str, state: Dict[str, Any]):
         """保存Agent状态"""
         state_file = memory_config.get_agent_state_path(agent_name)
-        
+
         # 添加时间戳
         state_with_timestamp = {
             "timestamp": datetime.now().isoformat(),
             "agent_name": agent_name,
             "state": state
         }
-        
+
         with open(state_file, 'w', encoding='utf-8') as f:
             json.dump(state_with_timestamp, f, indent=2, ensure_ascii=False)
-        
+
         print(f"💾 保存Agent状态: {agent_name}")
-    
+
     async def load_agent_state(self, agent_name: str) -> Optional[Dict[str, Any]]:
         """加载Agent状态"""
         state_file = memory_config.get_agent_state_path(agent_name)
-        
+
         if not state_file.exists():
             return None
-        
+
         try:
             with open(state_file, 'r', encoding='utf-8') as f:
                 state_data = json.load(f)
-            
+
             print(f"📂 加载Agent状态: {agent_name}")
             return state_data.get("state")
-        
+
         except Exception as e:
             print(f"❌ 加载Agent状态失败 {agent_name}: {e}")
             return None
-    
+
     def list_saved_states(self) -> List[str]:
         """列出所有已保存的Agent状态"""
         state_files = list(self.states_path.glob("*_state.json"))

@@ -23,7 +23,7 @@ class ChainFactory:
     def __init__(self):
         # Agent创建函数映射
         self._agent_creators = {
-            "CodePlanningAgent": create_planning_agent,
+            "CodePlanningAgent": create_planning_agent, 
             "FunctionWritingAgent": create_coding_agent,
             "TestGenerationAgent": create_test_agent,
             "UnitTestAgent": create_unit_test_agent,

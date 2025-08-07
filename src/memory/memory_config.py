@@ -38,9 +38,10 @@ class MemoryConfig:
                 collection_name="agent_execution_logs",
                 persistence_path=str(self.execution_logs_path),
                 k=50,  # 返回最相关的50个结果，增加查询范围
-                score_threshold=0.1,  # 进一步降低相似度阈值，确保能找到所有记录
+                score_threshold=0.0,  # 设置为0，不过滤任何结果
+                distance_metric="cosine",  # 明确指定使用余弦距离
                 embedding_function_config=SentenceTransformerEmbeddingFunctionConfig(
-                    model_name="all-MiniLM-L6-v2"
+                    model_name="paraphrase-multilingual-MiniLM-L12-v2"
                 ),
             )
         )
@@ -52,9 +53,10 @@ class MemoryConfig:
                 collection_name="workflow_patterns",
                 persistence_path=str(self.workflow_patterns_path),
                 k=3,  # 返回最相关的3个工作流模式
-                score_threshold=0.7,  # 更高的相似度阈值
+                score_threshold=0.0,  # 设置为0，不过滤任何结果
+                distance_metric="cosine",  # 明确指定使用余弦距离
                 embedding_function_config=SentenceTransformerEmbeddingFunctionConfig(
-                    model_name="all-MiniLM-L6-v2"
+                    model_name="paraphrase-multilingual-MiniLM-L12-v2"  # 统一使用中文模型
                 ),
             )
         )
