@@ -4,6 +4,14 @@
 
 这是一个基于MCP（Model Context Protocol）的智能代码生成系统，通过多个专业Agent协作完成从需求分析到代码生成、测试、重构的完整开发流程。
 
+## 参考资料
+- [MCP官方文档](https://github.com/modelcontextprotocol)
+- [AutoGen官方文档](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/quickstart.html)
+- [MagenticOne官方文档](https://microsoft.github.io/autogen/stable/reference/python/autogen_agentchat.teams.html#autogen_agentchat.teams.MagenticOneGroupChate)
+- [ChromaDB官方文档](https://microsoft.github.io/autogen/stable/reference/python/autogen_ext.memory.chromadb.html)
+- [Sentence Transformers官方文档](https://github.com/UKPLab/sentence-transformers)
+.....
+]
 ## 核心特性
 
 - **7个专业Agent协作** - 代码规划、编写、测试、重构、扫描、结构化
@@ -80,3 +88,4 @@ python src/main.py "创建一个计算器程序"
 - **AI模型**: 支持OpenAI兼容API
 - **存储**: ChromaDB向量数据库
 - **工具**: 静态代码分析、自动化测试
+
