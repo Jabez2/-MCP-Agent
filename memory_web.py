@@ -85,6 +85,26 @@ class MemoryWebServer:
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .stat-card { background: #f8f9fa; padding: 20px; border-radius: 5px; border-left: 4px solid #007bff; }
         .loading { text-align: center; padding: 20px; }
+        .expand-btn, .collapse-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .expand-btn:hover, .collapse-btn:hover { background: #138496; }
+        .content-container { margin: 10px 0; }
+        .content-full pre, .content-short {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            border: 1px solid #dee2e6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -171,7 +191,7 @@ class MemoryWebServer:
         // 加载所有记忆
         async function loadAllMemories() {
             try {
-                const response = await fetch('/api/memories?limit=100');
+                const response = await fetch('/api/memories?limit=1000');  // 增加限制
                 const memories = await response.json();
                 displayMemories(memories);
             } catch (error) {
@@ -188,7 +208,7 @@ class MemoryWebServer:
                 let url = '/api/search?';
                 if (query) url += `query=${encodeURIComponent(query)}&`;
                 if (agent) url += `agent=${encodeURIComponent(agent)}&`;
-                url += 'limit=50';
+                url += 'limit=200';  // 增加搜索限制
                 
                 const response = await fetch(url);
                 const memories = await response.json();
@@ -205,17 +225,48 @@ class MemoryWebServer:
                 return;
             }
             
-            const memoriesHtml = memories.map(memory => `
+            const memoriesHtml = memories.map((memory, index) => {
+                const shortContent = memory.content_preview || memory.content.substring(0, 200);
+                const fullContent = memory.content;
+                const needsExpansion = fullContent.length > 200;
+
+                return `
                 <div class="memory-item ${memory.success ? 'success' : 'failure'}">
                     <h4>${memory.agent_name} ${memory.success ? '✅' : '❌'}</h4>
                     <p><strong>时间:</strong> ${memory.timestamp.substring(0, 19)}</p>
                     <p><strong>耗时:</strong> ${memory.duration}秒</p>
-                    <p><strong>内容:</strong> ${memory.content_preview || memory.content.substring(0, 200) + '...'}</p>
+                    <div class="content-container">
+                        <p><strong>内容:</strong></p>
+                        <div class="content-short" id="short-${index}" ${needsExpansion ? '' : 'style="display:none"'}>
+                            ${shortContent}${needsExpansion ? '...' : ''}
+                            ${needsExpansion ? `<button onclick="toggleContent(${index})" class="expand-btn">展开完整内容</button>` : ''}
+                        </div>
+                        <div class="content-full" id="full-${index}" style="display:none">
+                            <pre style="white-space: pre-wrap; word-wrap: break-word;">${fullContent}</pre>
+                            ${needsExpansion ? `<button onclick="toggleContent(${index})" class="collapse-btn">收起内容</button>` : ''}
+                        </div>
+                        ${!needsExpansion ? `<div><pre style="white-space: pre-wrap; word-wrap: break-word;">${fullContent}</pre></div>` : ''}
+                    </div>
                     ${memory.score ? `<p><strong>相似度:</strong> ${memory.score.toFixed(3)}</p>` : ''}
                 </div>
-            `).join('');
-            
+                `;
+            }).join('');
+
             document.getElementById('memories').innerHTML = memoriesHtml;
+        }
+
+        // 切换内容显示
+        function toggleContent(index) {
+            const shortDiv = document.getElementById(`short-${index}`);
+            const fullDiv = document.getElementById(`full-${index}`);
+
+            if (shortDiv.style.display === 'none') {
+                shortDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+            } else {
+                shortDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+            }
         }
         
         // 导出记忆
@@ -270,7 +321,7 @@ class MemoryWebServer:
     async def api_list_memories(self, request):
         """API: 列出记忆"""
         try:
-            limit = int(request.query.get('limit', 50))
+            limit = int(request.query.get('limit', 1000))  # 增加默认限制
             memories = await memory_manager.list_all_memories(limit=limit)
             return web.json_response(memories)
         except Exception as e:
@@ -281,13 +332,13 @@ class MemoryWebServer:
         try:
             query = request.query.get('query', '')
             agent = request.query.get('agent', None)
-            limit = int(request.query.get('limit', 20))
-            
+            limit = int(request.query.get('limit', 100))  # 增加默认限制
+
             memories = await memory_manager.search_memories(
                 query=query,
                 agent_name=agent if agent else None
             )
-            
+
             return web.json_response(memories[:limit])
         except Exception as e:
             return web.json_response({'error': str(e)}, status=500)

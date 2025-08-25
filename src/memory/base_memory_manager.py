@@ -23,11 +23,18 @@ class ExecutionLogManager:
     def __init__(self):
         self.execution_memory: Optional[ChromaDBVectorMemory] = None
         self._initialized = False
-    
+
     async def initialize(self):
         """初始化memory系统"""
         if not self._initialized:
             self.execution_memory = memory_config.create_execution_memory()
+            # 确保底层 Chroma 集合已初始化，避免 _collection 为 None
+            try:
+                # autogen-ext 暴露的内部初始化方法（同步）
+                self.execution_memory._ensure_initialized()
+            except Exception as e:
+                # 不中断流程，但提示潜在问题；后续查询前再次确保
+                print(f"⚠️ 初始化执行内存集合时出现问题: {e}")
             self._initialized = True
     
     async def record_execution(self, 
@@ -108,8 +115,15 @@ class ExecutionLogManager:
 
         try:
             # 直接使用ChromaDB查询，绕过AutoGen的bug
+            # 在访问底层集合前确保已初始化
+            try:
+                self.execution_memory._ensure_initialized()
+            except Exception as e:
+                print(f"⚠️ 确保执行内存集合初始化失败: {e}")
             collection = self.execution_memory._collection
-            
+            if collection is None:
+                raise RuntimeError("Chroma collection is not initialized")
+
             # 执行查询
             query_results = collection.query(
                 query_texts=[search_query],

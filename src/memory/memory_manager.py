@@ -36,7 +36,7 @@ class MemoryManager:
         """列出所有记忆"""
         try:
             # 使用通用查询获取所有记录
-            all_records = await self.execution_log_manager.get_similar_executions("Agent")
+            all_records = await self.execution_log_manager.get_similar_executions("Agent", top_k=1000)  # 获取所有记录
             
             memories = []
             for i, record in enumerate(all_records[:limit]):
@@ -120,7 +120,7 @@ class MemoryManager:
     async def get_memory_by_id(self, memory_id: str) -> Optional[Dict[str, Any]]:
         """根据ID获取特定记忆"""
         try:
-            all_records = await self.execution_log_manager.get_similar_executions("Agent")
+            all_records = await self.execution_log_manager.get_similar_executions("Agent", top_k=1000)  # 获取所有记录
             
             for record in all_records:
                 if record.metadata.get("id") == memory_id:
@@ -146,7 +146,7 @@ class MemoryManager:
     async def get_memory_statistics(self) -> Dict[str, Any]:
         """获取记忆统计信息"""
         try:
-            all_records = await self.execution_log_manager.get_similar_executions("Agent")
+            all_records = await self.execution_log_manager.get_similar_executions("Agent", top_k=1000)  # 获取所有记录
             
             # 基础统计
             total_count = len(all_records)

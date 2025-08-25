@@ -18,7 +18,12 @@ from autogen_ext.memory.chromadb import (
 class MemoryConfig:
     """Memory系统配置类"""
     
-    def __init__(self, base_path: str = "./memory"):
+    def __init__(self, base_path: str = None):
+        # 使用绝对路径，避免工作目录变化导致的问题
+        if base_path is None:
+            # 获取项目根目录的绝对路径
+            project_root = Path(__file__).parent.parent.parent
+            base_path = project_root / "memory"
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
         
